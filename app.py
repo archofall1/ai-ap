@@ -17,7 +17,7 @@ except Exception:
 # 3. Initialize Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I'm fixed and ready to chat. No more red errors!"}
+        {"role": "assistant", "content": "Hello there. Im ready for use!"}
     ]
 
 # 4. Display Messages
