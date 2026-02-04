@@ -8,7 +8,7 @@ st.title("🤖 My Custom AI Assistant")
 # 2. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # We use a very reliable model here
+    # We are using a very stable model to prevent the BadRequestError
     client = InferenceClient("HuggingFaceH4/zephyr-7b-beta", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
@@ -17,7 +17,7 @@ except Exception:
 # 3. Initialize Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I am your fixed AI. No more red errors!"}
+        {"role": "assistant", "content": "Hello! I'm fixed and ready to chat. No more red errors!"}
     ]
 
 # 4. Display Messages
@@ -35,16 +35,20 @@ if prompt := st.chat_input("Type your message here..."):
         response_placeholder = st.empty()
         full_response = ""
         
-        # The Fixed Typing Loop
-        for message in client.chat_completion(
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000,
-            stream=True,
-        ):
-            token = message.choices[0].delta.content
-            if token is not None:  # THIS IS THE FIX
-                full_response += token
-                response_placeholder.markdown(full_response + "▌")
+        try:
+            for message in client.chat_completion(
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000,
+                stream=True,
+            ):
+                # THE FIX: This safely checks if the AI actually sent a word
+                if hasattr(message.choices[0].delta, 'content'):
+                    token = message.choices[0].delta.content
+                    if token: 
+                        full_response += token
+                        response_placeholder.markdown(full_response + "▌")
+        except Exception as e:
+            st.error("The AI had a tiny hiccup. Please try typing again!")
         
         response_placeholder.markdown(full_response)
     
