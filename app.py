@@ -1,41 +1,37 @@
 import streamlit as st
 from huggingface_hub import InferenceClient
 from PIL import Image
+import io
+import base64
 
 # 1. Page Configuration
 st.set_page_config(page_title="Nextile AI", page_icon="🤖")
-st.title("🤖 Nextile AI")
+st.title("🤖 Nextile AI (Vision Enabled)")
 
 # 2. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
+    # SWITCHING TO A VISION MODEL
+    client = InferenceClient("meta-llama/Llama-3.2-11B-Vision-Instruct", token=api_key)
 except Exception:
-    st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
+    st.error("Missing API Key in Streamlit Secrets!")
     st.stop()
 
-# 3. Initialize Chat History
+# 3. Image Upload (The "Plus" functionality)
+uploaded_file = st.file_uploader("Upload an image to analyze", type=["jpg", "jpeg", "png"])
+if uploaded_file:
+    st.image(uploaded_file, caption="Target Image", width=300)
+
+# 4. Initialize Chat History
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}
-    ]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. I can now see images. Upload one and ask me about it!"}]
 
-# 4. NEW: Image Uploader in the Sidebar
-with st.sidebar:
-    st.header("Upload Image")
-    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Your Uploaded Image', use_container_width=True)
-        st.success("Image uploaded! (Note: Current AI 'brain' reads text; image analysis is coming soon!)")
-
-# 5. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 6. User Input and AI Response
-if prompt := st.chat_input("Type your message here..."):
+# 5. Chat Input and Vision Analysis
+if prompt := st.chat_input("Ask Nextile about the image..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -45,23 +41,28 @@ if prompt := st.chat_input("Type your message here..."):
         full_response = ""
         
         try:
-            messages_for_api = [{"role": "system", "content": "You are Nextile AI, a helpful assistant."}]
-            for m in st.session_state.messages:
-                messages_for_api.append(m)
+            # Prepare the message for the Vision model
+            if uploaded_file:
+                # Convert image to base64 so the AI can "see" it
+                img_bytes = uploaded_file.getvalue()
+                base64_image = base64.b64encode(img_bytes).decode('utf-8')
+                data_url = f"data:image/jpeg;base64,{base64_image}"
+                
+                messages = [{"role": "user", "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}}
+                ]}]
+            else:
+                messages = [{"role": "user", "content": prompt}]
 
-            for message in client.chat_completion(
-                messages=messages_for_api,
-                max_tokens=1000,
-                stream=True,
-            ):
+            for message in client.chat_completion(messages=messages, max_tokens=500, stream=True):
                 if hasattr(message.choices[0].delta, 'content'):
                     token = message.choices[0].delta.content
-                    if token: 
+                    if token:
                         full_response += token
                         response_placeholder.markdown(full_response + "▌")
-        except Exception:
-            st.error("Nextile AI had a tiny hiccup. Please try typing again!")
+        except Exception as e:
+            st.error(f"Vision error: {e}")
         
         response_placeholder.markdown(full_response)
-    
     st.session_state.messages.append({"role": "assistant", "content": full_response})
