@@ -63,7 +63,7 @@ with st.sidebar:
 # 5. Initialize Current Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
-    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. How can I help today?"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. What can I do to assist you today?"}]
 
 st.title(f"🤖 Chat: {all_chats.get(st.session_state.current_chat_id, {}).get('title', 'New Session')}")
 
