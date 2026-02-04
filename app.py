@@ -17,7 +17,7 @@ except Exception:
 # 3. Initialize Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use. But remember, I'm only a text-based AI"}
+        {"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use. But remember, I'm only a text-based AI, so I can't really understand images quite yet."}
     ]
 
 # 4. Display Messages
