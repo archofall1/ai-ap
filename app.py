@@ -39,7 +39,7 @@ with st.sidebar:
     st.title("Nextile AI")
     if st.button("➕ New Chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. How can I help today?"}]
+        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. What can I do to help you today?"}]
         st.rerun()
 
     st.divider()
@@ -57,7 +57,7 @@ with st.sidebar:
     if st.button("🗑️ Wipe All History"):
         delete_all_chats()
         st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "All history deleted."}]
+        st.session_state.messages = [{"role": "assistant", "content": "Chat History Deleted."}]
         st.rerun()
 
 # 5. Initialize Current Session
