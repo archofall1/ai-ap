@@ -2,13 +2,12 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 
 # 1. Page Configuration
-st.set_page_config(page_title="My Personal AI", page_icon="🤖")
-st.title("🤖 My Custom AI Assistant")
+st.set_page_config(page_title="Nextile AI", page_icon="🤖")
+st.title("🤖 Nextile AI")
 
 # 2. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # We are using a very stable model to prevent the BadRequestError
     client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
@@ -17,7 +16,7 @@ except Exception:
 # 3. Initialize Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello there. Im ready for use!"}
+        {"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}
     ]
 
 # 4. Display Messages
@@ -36,19 +35,22 @@ if prompt := st.chat_input("Type your message here..."):
         full_response = ""
         
         try:
+            messages_for_api = [{"role": "system", "content": "You are Nextile AI, a helpful and polite assistant."}]
+            for m in st.session_state.messages:
+                messages_for_api.append(m)
+
             for message in client.chat_completion(
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages_for_api,
                 max_tokens=1000,
                 stream=True,
             ):
-                # THE FIX: This safely checks if the AI actually sent a word
                 if hasattr(message.choices[0].delta, 'content'):
                     token = message.choices[0].delta.content
                     if token: 
                         full_response += token
                         response_placeholder.markdown(full_response + "▌")
-        except Exception as e:
-            st.error("The AI had a tiny hiccup. Please try typing again!")
+        except Exception:
+            st.error("Nextile AI had a tiny hiccup. Please try typing again!")
         
         response_placeholder.markdown(full_response)
     
