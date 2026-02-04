@@ -1,5 +1,6 @@
 import streamlit as st
 from huggingface_hub import InferenceClient
+from PIL import Image
 
 # 1. Page Configuration
 st.set_page_config(page_title="Nextile AI", page_icon="🤖")
@@ -19,12 +20,21 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}
     ]
 
-# 4. Display Messages
+# 4. NEW: Image Uploader in the Sidebar
+with st.sidebar:
+    st.header("Upload Image")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Your Uploaded Image', use_container_width=True)
+        st.success("Image uploaded! (Note: Current AI 'brain' reads text; image analysis is coming soon!)")
+
+# 5. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 5. User Input and AI Response
+# 6. User Input and AI Response
 if prompt := st.chat_input("Type your message here..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -35,7 +45,7 @@ if prompt := st.chat_input("Type your message here..."):
         full_response = ""
         
         try:
-            messages_for_api = [{"role": "system", "content": "You are Nextile AI, a helpful and polite assistant."}]
+            messages_for_api = [{"role": "system", "content": "You are Nextile AI, a helpful assistant."}]
             for m in st.session_state.messages:
                 messages_for_api.append(m)
 
