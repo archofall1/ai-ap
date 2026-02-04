@@ -6,25 +6,22 @@ import base64
 
 # 1. Page Configuration
 st.set_page_config(page_title="Nextile AI", page_icon="🤖")
-st.title("🤖 Nextile AI (Vision Enabled)")
+st.title("🤖 Nextile AI")
 
 # 2. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # SWITCHING TO A VISION MODEL
     client = InferenceClient("meta-llama/Llama-3.2-11B-Vision-Instruct", token=api_key)
 except Exception:
     st.error("Missing API Key in Streamlit Secrets!")
     st.stop()
 
-# 3. Image Upload (The "Plus" functionality)
-uploaded_file = st.file_uploader("Upload an image to analyze", type=["jpg", "jpeg", "png"])
-if uploaded_file:
-    st.image(uploaded_file, caption="Target Image", width=300)
+# 3. Image Upload with "Shrink Ray"
+uploaded_file = st.file_uploader("Upload an image (Max 10MB)", type=["jpg", "jpeg", "png"])
 
 # 4. Initialize Chat History
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. I can now see images. Upload one and ask me about it!"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready to analyze your images!"}]
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -41,11 +38,16 @@ if prompt := st.chat_input("Ask Nextile about the image..."):
         full_response = ""
         
         try:
-            # Prepare the message for the Vision model
             if uploaded_file:
-                # Convert image to base64 so the AI can "see" it
-                img_bytes = uploaded_file.getvalue()
-                base64_image = base64.b64encode(img_bytes).decode('utf-8')
+                # OPEN AND RESIZE IMAGE (The Fix for 413 Error)
+                img = Image.open(uploaded_file)
+                # If image is huge, shrink it so it's under 1MB
+                img.thumbnail((800, 800)) 
+                
+                # Convert resized image to base64
+                buffered = io.BytesIO()
+                img.save(buffered, format="JPEG", quality=85)
+                base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
                 data_url = f"data:image/jpeg;base64,{base64_image}"
                 
                 messages = [{"role": "user", "content": [
@@ -62,7 +64,10 @@ if prompt := st.chat_input("Ask Nextile about the image..."):
                         full_response += token
                         response_placeholder.markdown(full_response + "▌")
         except Exception as e:
-            st.error(f"Vision error: {e}")
+            if "413" in str(e):
+                st.error("Image is still too big! Try a smaller photo.")
+            else:
+                st.error(f"Error: {e}")
         
         response_placeholder.markdown(full_response)
     st.session_state.messages.append({"role": "assistant", "content": full_response})
