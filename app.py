@@ -2,6 +2,7 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 import shelve
 import uuid
+import random # This is the "magic" tool for randomness
 from datetime import datetime
 
 # 1. Page Configuration
@@ -15,7 +16,18 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# 3. Database Functions
+# 3. Random Greeting List
+# You can add or change any of these messages!
+GREETINGS = [
+    "Hi! I'm Nextile AI. Ready for use.",
+    "Hello! Nextile AI is online and ready to help.",
+    "Nextile AI here! What's on your mind today?",
+    "Ready to chat? I'm Nextile AI.",
+    "Greetings! I'm Nextile AI, your personal assistant.",
+    "Systems online. Nextile AI at your service!"
+]
+
+# 4. Database Functions
 def get_all_chats():
     with shelve.open("nextile_storage") as db:
         return db.get("chats", {})
@@ -23,7 +35,6 @@ def get_all_chats():
 def save_chat(chat_id, messages):
     with shelve.open("nextile_storage") as db:
         chats = db.get("chats", {})
-        # This keeps the sidebar titles short and clean
         first_question = messages[1]["content"][:20] if len(messages) > 1 else "New chat"
         chats[chat_id] = {
             "messages": messages,
@@ -32,16 +43,13 @@ def save_chat(chat_id, messages):
         }
         db["chats"] = chats
 
-def delete_all_chats():
-    with shelve.open("nextile_storage") as db:
-        db["chats"] = {}
-
-# 4. Sidebar Navigation
+# 5. Sidebar Navigation
 with st.sidebar:
     st.title("Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}]
+        # Pick a random message from our list
+        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
         st.rerun()
 
     st.divider()
@@ -54,27 +62,20 @@ with st.sidebar:
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
-    st.divider()
-    if st.button("Clear history"):
-        delete_all_chats()
-        st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}]
-        st.rerun()
-
-# 5. Initialize Current Session
+# 6. Initialize Current Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
-    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}]
+    # Pick a random message for the very first visit too
+    st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
 
-# THIS IS THE PART YOU WANTED CHANGED:
 st.title("New chat")
 
-# 6. Display Messages
+# 7. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 7. Chat Logic
+# 8. Chat Logic
 if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
