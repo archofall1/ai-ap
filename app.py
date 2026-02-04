@@ -15,7 +15,7 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# 3. Database Functions (Long-term storage)
+# 3. Database Functions
 def get_all_chats():
     with shelve.open("nextile_storage") as db:
         return db.get("chats", {})
@@ -23,10 +23,12 @@ def get_all_chats():
 def save_chat(chat_id, messages):
     with shelve.open("nextile_storage") as db:
         chats = db.get("chats", {})
+        # This keeps the sidebar titles short and clean
+        first_question = messages[1]["content"][:20] if len(messages) > 1 else "New chat"
         chats[chat_id] = {
             "messages": messages,
-            "title": messages[1]["content"][:30] + "..." if len(messages) > 1 else "New Chat",
-            "date": datetime.now().strftime("%b %d, %H:%M")
+            "title": first_question,
+            "date": datetime.now().strftime("%b %d")
         }
         db["chats"] = chats
 
@@ -37,35 +39,35 @@ def delete_all_chats():
 # 4. Sidebar Navigation
 with st.sidebar:
     st.title("Nextile AI")
-    if st.button("➕ New Chat", use_container_width=True):
+    if st.button("➕ New chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. What can I do to help you today?"}]
+        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}]
         st.rerun()
 
     st.divider()
-    st.subheader("Recent Chats")
+    st.subheader("Recent")
     all_chats = get_all_chats()
     
-    # List past chats as buttons
     for c_id, chat_data in reversed(list(all_chats.items())):
-        if st.button(f"💬 {chat_data['title']}\n({chat_data['date']})", key=c_id, use_container_width=True):
+        if st.button(f"{chat_data['title']}", key=c_id, use_container_width=True):
             st.session_state.current_chat_id = c_id
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
     st.divider()
-    if st.button("🗑️ Wipe All History"):
+    if st.button("Clear history"):
         delete_all_chats()
         st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "Chat History Deleted."}]
+        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}]
         st.rerun()
 
 # 5. Initialize Current Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
-    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. What can I do to assist you today?"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI. Ready for use."}]
 
-st.title(f"🤖 Chat: {all_chats.get(st.session_state.current_chat_id, {}).get('title', 'New Session')}")
+# THIS IS THE PART YOU WANTED CHANGED:
+st.title("New chat")
 
 # 6. Display Messages
 for message in st.session_state.messages:
@@ -73,7 +75,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # 7. Chat Logic
-if prompt := st.chat_input("Type your message..."):
+if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -83,8 +85,7 @@ if prompt := st.chat_input("Type your message..."):
         full_response = ""
         
         try:
-            # Send current history to AI
-            for message in client.chat_completion(messages=st.session_state.messages, max_tokens=500, stream=True):
+            for message in client.chat_completion(messages=st.session_state.messages, max_tokens=1000, stream=True):
                 if hasattr(message.choices[0].delta, 'content'):
                     token = message.choices[0].delta.content
                     if token: 
@@ -95,5 +96,4 @@ if prompt := st.chat_input("Type your message..."):
         
         response_placeholder.markdown(full_response)
         st.session_state.messages.append({"role": "assistant", "content": full_response})
-        # Save to storage
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
