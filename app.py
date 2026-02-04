@@ -2,7 +2,7 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 import shelve
 import uuid
-import random # This is the "magic" tool for randomness
+import random
 from datetime import datetime
 
 # 1. Page Configuration
@@ -17,7 +17,6 @@ except Exception:
     st.stop()
 
 # 3. Random Greeting List
-# You can add or change any of these messages!
 GREETINGS = [
     "Hi! I'm Nextile AI. Ready for use.",
     "Hello! Nextile AI is online and ready to help.",
@@ -43,12 +42,15 @@ def save_chat(chat_id, messages):
         }
         db["chats"] = chats
 
+def delete_all_chats():
+    with shelve.open("nextile_storage") as db:
+        db["chats"] = {} # This empties the saved history
+
 # 5. Sidebar Navigation
 with st.sidebar:
     st.title("Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
-        # Pick a random message from our list
         st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
         st.rerun()
 
@@ -56,16 +58,25 @@ with st.sidebar:
     st.subheader("Recent")
     all_chats = get_all_chats()
     
+    # List of past chats
     for c_id, chat_data in reversed(list(all_chats.items())):
         if st.button(f"{chat_data['title']}", key=c_id, use_container_width=True):
             st.session_state.current_chat_id = c_id
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
+    # THE MISSING PART: CLEAR HISTORY
+    st.divider()
+    if st.button("🗑️ Clear history", use_container_width=True):
+        delete_all_chats()
+        # Reset current session too
+        st.session_state.current_chat_id = str(uuid.uuid4())
+        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
+        st.rerun()
+
 # 6. Initialize Current Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
-    # Pick a random message for the very first visit too
     st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
 
 st.title("New chat")
