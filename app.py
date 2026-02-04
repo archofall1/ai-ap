@@ -9,7 +9,7 @@ st.markdown("---")
 # 2. Secret Key Setup (This pulls from Streamlit's settings)
 try:
     api_key = st.secrets["HF_TOKEN"]
-    client = InferenceClient("HuggingFaceH4/zephyr-7b-beta", token=api_key)
+    client = InferenceClient("meta-llama/Llama-3.2-1B-Instruct", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
