@@ -149,6 +149,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup.")
+                st.error("Nextile AI had a tiny hiccup.Please refresh your page to try again")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
