@@ -22,7 +22,7 @@ except Exception:
     st.stop()
 
 # 3. Update Message
-st.info("✨ **new image genration update! try /draw**")
+st.info("✨ **New image generation update! Try /draw followed by your prompt to generate new images!**")
 
 # 4. Random Greeting List
 GREETINGS = [
