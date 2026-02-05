@@ -12,7 +12,7 @@ st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
 st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight:</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support me by SUBSCRIBING!✨</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support me by SUBSCRIBING!✨</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
