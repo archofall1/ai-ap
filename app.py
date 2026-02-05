@@ -7,7 +7,7 @@ from datetime import datetime
 import io
 from PIL import Image
 
-# 1. Page Configuration
+# 1. Page Configuration - Logo set to Robot Emoji
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Secret Key Setup
@@ -19,7 +19,7 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# 3. New Update Announcement (This is the text you wanted at the top)
+# 3. New Update Announcement
 st.info("✨ **New image generation update!** Type `/draw` followed by your prompt to create art.")
 
 # 4. Random Greeting List
@@ -55,9 +55,9 @@ def delete_all_chats():
     with shelve.open("nextile_storage") as db:
         db["chats"] = {}
 
-# 6. Sidebar Navigation (ALL BUTTONS ARE HERE)
+# 6. Sidebar Navigation (ALL FEATURES PRESERVED)
 with st.sidebar:
-    st.title("Nextile AI")
+    st.title("🤖 Nextile AI") # Added robot emoji to sidebar title too
     if st.button("➕ New chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
         st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
@@ -72,7 +72,7 @@ with st.sidebar:
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
-    # THE CLEAR HISTORY BUTTON (STILL HERE!)
+    # CLEAR HISTORY BUTTON (STILL HERE!)
     st.divider()
     if st.button("🗑️ Clear history", use_container_width=True):
         delete_all_chats()
