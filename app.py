@@ -12,7 +12,7 @@ st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
 st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support the creator by SUBSCIRBING✨</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
@@ -94,7 +94,7 @@ if "current_chat_id" not in st.session_state:
 
 # 9. Display Messages
 for message in st.session_state.messages:
-    if message["role"] != "system": # Hide the secret instruction from the UI
+    if message["role"] != "system":
         with st.chat_message(message["role"]):
             if isinstance(message["content"], bytes):
                 st.image(message["content"])
@@ -124,10 +124,19 @@ if prompt := st.chat_input("Message Nextile AI..."):
             response_placeholder = st.empty()
             full_response = ""
             
-            # --- THE "WHO CREATED YOU" INSTRUCTION ---
-            system_instruction = {"role": "system", "content": "You are Nextile AI. If anyone asks who created you or who made you, you must say that you were created by Knight."}
+            # --- THE DYNAMIC SYSTEM INSTRUCTION ---
+            system_instruction = {
+                "role": "system", 
+                "content": (
+                    "You are Nextile AI. You have a distinct identity. "
+                    "If anyone asks who created you, who made you, or who your developer is, "
+                    "rotate through creative ways to credit Knight. For example: "
+                    "'I was brought to life by Knight.', 'My code was forged by Knight.', "
+                    "'I owe my existence to Knight.', or 'Knight is the genius who created me.' "
+                    "Always stay helpful and polite."
+                )
+            }
             
-            # Combine instruction with current history for the API call
             messages_to_send = [system_instruction] + st.session_state.messages
             
             try:
@@ -140,6 +149,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup. Please refresh your page to try again.")
+                st.error("Nextile AI had a tiny hiccup.")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
