@@ -7,7 +7,7 @@ from datetime import datetime
 import io
 from PIL import Image
 
-# 1. Page Configuration - ROBOT LOGO
+# 1. Page Configuration - ROBOT LOGO PRESERVED
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Secret Key Setup
@@ -57,7 +57,7 @@ def delete_all_chats():
     with shelve.open("nextile_storage") as db:
         db["chats"] = {}
 
-# 6. Sidebar Navigation (ALL FEATURES KEPT)
+# 6. Sidebar Navigation (ALL FEATURES PRESERVED)
 with st.sidebar:
     st.title("🤖 Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
@@ -74,7 +74,7 @@ with st.sidebar:
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
-    # THE CLEAR HISTORY BUTTON
+    # THE CLEAR HISTORY BUTTON - VERIFIED
     st.divider()
     if st.button("🗑️ Clear history", use_container_width=True):
         delete_all_chats()
@@ -97,16 +97,23 @@ for message in st.session_state.messages:
         else:
             st.markdown(message["content"])
 
-# 9. NEW: Integrated Image Upload Button
-uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-if uploaded_file:
-    st.image(uploaded_file, caption="Selected Image", width=150)
+# 9. BOTTOM LAYOUT: SIDE-BY-SIDE UPLOADER AND CHAT
+# We create two columns: one tiny one for the "plus" and a big one for text
+col1, col2 = st.columns([1, 6])
+
+with col1:
+    uploaded_file = st.file_uploader("Upload", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+
+with col2:
+    prompt = st.chat_input("Message Nextile AI...")
 
 # 10. Chat & Image Logic
-if prompt := st.chat_input("Message Nextile AI..."):
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+        if uploaded_file:
+            st.image(uploaded_file, width=200)
 
     with st.chat_message("assistant"):
         if prompt.lower().startswith("/draw"):
