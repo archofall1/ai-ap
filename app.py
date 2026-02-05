@@ -7,7 +7,7 @@ from datetime import datetime
 import io
 from PIL import Image
 
-# 1. Page Configuration - Logo set to Robot Emoji
+# 1. Page Configuration - ROBOT LOGO
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Secret Key Setup
@@ -19,7 +19,7 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# 3. New Update Announcement
+# 3. Announcement Banner
 st.info("✨ **New image generation update!** Type `/draw` followed by your prompt to create art.")
 
 # 4. Random Greeting List
@@ -42,7 +42,9 @@ def save_chat(chat_id, messages):
         first_text = "New chat"
         for m in messages:
             if m["role"] == "user":
-                first_text = m["content"][:20] + "..."
+                content = m["content"]
+                if isinstance(content, str):
+                    first_text = content[:20] + "..."
                 break
         chats[chat_id] = {
             "messages": messages,
@@ -55,9 +57,9 @@ def delete_all_chats():
     with shelve.open("nextile_storage") as db:
         db["chats"] = {}
 
-# 6. Sidebar Navigation (ALL FEATURES PRESERVED)
+# 6. Sidebar Navigation (ALL FEATURES KEPT)
 with st.sidebar:
-    st.title("🤖 Nextile AI") # Added robot emoji to sidebar title too
+    st.title("🤖 Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
         st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
@@ -72,7 +74,7 @@ with st.sidebar:
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
-    # CLEAR HISTORY BUTTON (STILL HERE!)
+    # THE CLEAR HISTORY BUTTON
     st.divider()
     if st.button("🗑️ Clear history", use_container_width=True):
         delete_all_chats()
@@ -95,7 +97,12 @@ for message in st.session_state.messages:
         else:
             st.markdown(message["content"])
 
-# 9. Chat & Image Logic
+# 9. NEW: Integrated Image Upload Button
+uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+if uploaded_file:
+    st.image(uploaded_file, caption="Selected Image", width=150)
+
+# 10. Chat & Image Logic
 if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -113,7 +120,7 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 st.image(img_bytes)
                 st.session_state.messages.append({"role": "assistant", "content": img_bytes})
             except Exception:
-                st.error("I couldn't draw that. Maybe try a simpler prompt?")
+                st.error("I couldn't draw that. Try again!")
         else:
             response_placeholder = st.empty()
             full_response = ""
