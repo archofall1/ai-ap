@@ -10,7 +10,13 @@ from PIL import Image
 # 1. Page Configuration - Robot Logo
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
-# 2. Secret Key Setup
+# 2. Top Branding and Update Message
+# This places your name and YouTube link at the very top of the page.
+st.markdown("### Made by Knight")
+st.markdown("[Visit my YouTube Channel](https://www.youtube.com/@knxght.official)") 
+st.info("✨ **new image genration try /draw**")
+
+# 3. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
     # Text Client
@@ -20,9 +26,6 @@ try:
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
-
-# 3. Update Message
-st.info("✨ **New image generation update! Try /draw followed by your prompt to generate new images!**")
 
 # 4. Random Greeting List
 GREETINGS = [
