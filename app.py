@@ -10,13 +10,15 @@ from PIL import Image
 # 1. Page Configuration - Robot Logo
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
-# 2. Top Branding and Update Message
-# This places your name and YouTube link at the very top of the page.
-st.markdown("### Made by Knight")
-st.markdown("[Visit my YouTube Channel](https://www.youtube.com/@knxght.official)") 
-st.info("✨ **new image genration try /draw**")
+# 2. Top Branding (Small and Centered)
+st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
 
-# 3. Secret Key Setup
+# 3. Main Title and Update Banner
+st.title("Nextile AI")
+st.info("✨ **New image generation update! Try /draw followed by your prompt to generate an image**")
+
+# 4. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
     # Text Client
@@ -27,7 +29,7 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# 4. Random Greeting List
+# 5. Random Greeting List
 GREETINGS = [
     "Hi! I'm Nextile AI. Ready for use.",
     "Hello! Nextile AI is online and ready to help.",
@@ -37,7 +39,7 @@ GREETINGS = [
     "Systems online. Nextile AI at your service!"
 ]
 
-# 5. Database Functions
+# 6. Database Functions
 def get_all_chats():
     with shelve.open("nextile_storage") as db:
         return db.get("chats", {})
@@ -63,7 +65,7 @@ def delete_all_chats():
     with shelve.open("nextile_storage") as db:
         db["chats"] = {}
 
-# 6. Sidebar Navigation
+# 7. Sidebar Navigation
 with st.sidebar:
     st.title("🤖 Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
@@ -88,14 +90,12 @@ with st.sidebar:
         st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
         st.rerun()
 
-# 7. Initialize Session
+# 8. Initialize Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
     st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
 
-st.title("New chat")
-
-# 8. Display Messages
+# 9. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         if isinstance(message["content"], bytes):
@@ -103,7 +103,7 @@ for message in st.session_state.messages:
         else:
             st.markdown(message["content"])
 
-# 9. Chat & Image Logic
+# 10. Chat & Image Logic
 if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -135,6 +135,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup.")
+                st.error("Nextile AI had a tiny hiccup. Refresh your page to try again.")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
