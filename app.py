@@ -19,7 +19,10 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# 3. Random Greeting List
+# 3. New Update Announcement (This is the text you wanted at the top)
+st.info("✨ **New image generation update!** Type `/draw` followed by your prompt to create art.")
+
+# 4. Random Greeting List
 GREETINGS = [
     "Hi! I'm Nextile AI. Want me to draw something? Try typing '/draw a neon cat'.",
     "Nextile AI online. I can chat or generate images with /draw!",
@@ -28,7 +31,7 @@ GREETINGS = [
     "Systems online. Nextile AI at your service!"
 ]
 
-# 4. Database Functions
+# 5. Database Functions
 def get_all_chats():
     with shelve.open("nextile_storage") as db:
         return db.get("chats", {})
@@ -36,7 +39,6 @@ def get_all_chats():
 def save_chat(chat_id, messages):
     with shelve.open("nextile_storage") as db:
         chats = db.get("chats", {})
-        # Create a title based on the first user message
         first_text = "New chat"
         for m in messages:
             if m["role"] == "user":
@@ -53,7 +55,7 @@ def delete_all_chats():
     with shelve.open("nextile_storage") as db:
         db["chats"] = {}
 
-# 5. Sidebar Navigation
+# 6. Sidebar Navigation (ALL BUTTONS ARE HERE)
 with st.sidebar:
     st.title("Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
@@ -70,7 +72,7 @@ with st.sidebar:
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
-    # --- THE CLEAR HISTORY BUTTON ---
+    # THE CLEAR HISTORY BUTTON (STILL HERE!)
     st.divider()
     if st.button("🗑️ Clear history", use_container_width=True):
         delete_all_chats()
@@ -78,14 +80,14 @@ with st.sidebar:
         st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
         st.rerun()
 
-# 6. Initialize Current Session
+# 7. Initialize Current Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
     st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
 
 st.title("New chat")
 
-# 7. Display Messages
+# 8. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         if isinstance(message["content"], bytes):
@@ -93,7 +95,7 @@ for message in st.session_state.messages:
         else:
             st.markdown(message["content"])
 
-# 8. Chat & Image Logic
+# 9. Chat & Image Logic
 if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
