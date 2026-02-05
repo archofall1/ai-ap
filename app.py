@@ -7,23 +7,21 @@ from datetime import datetime
 import io
 from PIL import Image
 
-# 1. Page Configuration - Robot Logo
+# 1. Page Configuration
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
-st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight:</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support me by SUBSCRIBING!✨</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support the creator by SUBSCIRBING✨</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
-st.info("✨ **New image generation update! Try /draw followed by your prompt to generate an image**")
+st.info("✨ **new image genration try /draw**")
 
 # 4. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # Text Client
     chat_client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
-    # Image Client
     image_client = InferenceClient("black-forest-labs/FLUX.1-schnell", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
@@ -82,7 +80,6 @@ with st.sidebar:
             st.session_state.messages = chat_data["messages"]
             st.rerun()
 
-    # Clear History Button
     st.divider()
     if st.button("🗑️ Clear history", use_container_width=True):
         delete_all_chats()
@@ -97,11 +94,12 @@ if "current_chat_id" not in st.session_state:
 
 # 9. Display Messages
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        if isinstance(message["content"], bytes):
-            st.image(message["content"])
-        else:
-            st.markdown(message["content"])
+    if message["role"] != "system": # Hide the secret instruction from the UI
+        with st.chat_message(message["role"]):
+            if isinstance(message["content"], bytes):
+                st.image(message["content"])
+            else:
+                st.markdown(message["content"])
 
 # 10. Chat & Image Logic
 if prompt := st.chat_input("Message Nextile AI..."):
@@ -125,8 +123,15 @@ if prompt := st.chat_input("Message Nextile AI..."):
         else:
             response_placeholder = st.empty()
             full_response = ""
+            
+            # --- THE "WHO CREATED YOU" INSTRUCTION ---
+            system_instruction = {"role": "system", "content": "You are Nextile AI. If anyone asks who created you or who made you, you must say that you were created by Knight."}
+            
+            # Combine instruction with current history for the API call
+            messages_to_send = [system_instruction] + st.session_state.messages
+            
             try:
-                for message in chat_client.chat_completion(messages=st.session_state.messages, max_tokens=1000, stream=True):
+                for message in chat_client.chat_completion(messages=messages_to_send, max_tokens=1000, stream=True):
                     if hasattr(message.choices[0].delta, 'content'):
                         token = message.choices[0].delta.content
                         if token: 
@@ -135,6 +140,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup. Refresh your page to try again.")
+                st.error("Nextile AI had a tiny hiccup. Please refresh your page to try again.")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
