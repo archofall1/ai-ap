@@ -4,8 +4,6 @@ import shelve
 import uuid
 import random
 from datetime import datetime
-import io
-from PIL import Image
 
 # 1. Page Configuration - ROBOT LOGO PRESERVED
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
@@ -13,25 +11,26 @@ st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 # 2. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    chat_client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
-    image_client = InferenceClient("black-forest-labs/FLUX.1-schnell", token=api_key)
+    # Using the fast Llama 3.2 3B model for text
+    client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
 # 3. Announcement Banner
-st.info("✨ **New image generation update!** Type `/draw` followed by your prompt to create art.")
+st.info("✨ **Nextile AI Updated:** Optimized for fast, text-based conversations.")
 
 # 4. Random Greeting List
 GREETINGS = [
-    "Hi! I'm Nextile AI. Want me to draw something? Try typing '/draw a neon cat'.",
-    "Nextile AI online. I can chat or generate images with /draw!",
+    "Hi! I'm Nextile AI. Ready for use.",
+    "Hello! Nextile AI is online and ready to help.",
+    "Nextile AI here! What's on your mind today?",
     "Ready to chat? I'm Nextile AI.",
-    "Greetings! Use /draw for images or just message me to chat.",
+    "Greetings! I'm Nextile AI, your personal assistant.",
     "Systems online. Nextile AI at your service!"
 ]
 
-# 5. Database Functions
+# 5. Database Functions (Long-term storage)
 def get_all_chats():
     with shelve.open("nextile_storage") as db:
         return db.get("chats", {})
@@ -42,9 +41,7 @@ def save_chat(chat_id, messages):
         first_text = "New chat"
         for m in messages:
             if m["role"] == "user":
-                content = m["content"]
-                if isinstance(content, str):
-                    first_text = content[:20] + "..."
+                first_text = m["content"][:20] + "..."
                 break
         chats[chat_id] = {
             "messages": messages,
@@ -92,55 +89,31 @@ st.title("New chat")
 # 8. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        if isinstance(message["content"], bytes):
-            st.image(message["content"])
-        else:
-            st.markdown(message["content"])
+        st.markdown(message["content"])
 
-# 9. BOTTOM LAYOUT: SIDE-BY-SIDE UPLOADER AND CHAT
-# We create two columns: one tiny one for the "plus" and a big one for text
-col1, col2 = st.columns([1, 6])
-
-with col1:
-    uploaded_file = st.file_uploader("Upload", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-
-with col2:
-    prompt = st.chat_input("Message Nextile AI...")
-
-# 10. Chat & Image Logic
-if prompt:
+# 9. Chat Input
+if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
-        if uploaded_file:
-            st.image(uploaded_file, width=200)
 
     with st.chat_message("assistant"):
-        if prompt.lower().startswith("/draw"):
-            image_prompt = prompt.replace("/draw", "").strip()
-            st.write(f"🎨 Drawing '{image_prompt}'...")
-            try:
-                image = image_client.text_to_image(image_prompt)
-                img_byte_arr = io.BytesIO()
-                image.save(img_byte_arr, format='PNG')
-                img_bytes = img_byte_arr.getvalue()
-                st.image(img_bytes)
-                st.session_state.messages.append({"role": "assistant", "content": img_bytes})
-            except Exception:
-                st.error("I couldn't draw that. Try again!")
-        else:
-            response_placeholder = st.empty()
-            full_response = ""
-            try:
-                for message in chat_client.chat_completion(messages=st.session_state.messages, max_tokens=1000, stream=True):
-                    if hasattr(message.choices[0].delta, 'content'):
-                        token = message.choices[0].delta.content
-                        if token: 
-                            full_response += token
-                            response_placeholder.markdown(full_response + "▌")
-                response_placeholder.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-            except Exception:
-                st.error("Nextile AI had a tiny hiccup.")
+        response_placeholder = st.empty()
+        full_response = ""
+        try:
+            for message in client.chat_completion(
+                messages=st.session_state.messages, 
+                max_tokens=1000, 
+                stream=True
+            ):
+                if hasattr(message.choices[0].delta, 'content'):
+                    token = message.choices[0].delta.content
+                    if token: 
+                        full_response += token
+                        response_placeholder.markdown(full_response + "▌")
+            response_placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception:
+            st.error("Nextile AI had a tiny hiccup.")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
