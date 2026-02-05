@@ -13,9 +13,7 @@ st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 # 2. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # Text Brain
     chat_client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
-    # Image Brain (FLUX is one of the best for this!)
     image_client = InferenceClient("black-forest-labs/FLUX.1-schnell", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
@@ -23,9 +21,11 @@ except Exception:
 
 # 3. Random Greeting List
 GREETINGS = [
-    "Hi! I'm Nextile AI. Want me to draw something? Try typing '/draw a cool robot'.",
+    "Hi! I'm Nextile AI. Want me to draw something? Try typing '/draw a neon cat'.",
     "Nextile AI online. I can chat or generate images with /draw!",
-    "Ready for use. Type /draw followed by a prompt to see some magic."
+    "Ready to chat? I'm Nextile AI.",
+    "Greetings! Use /draw for images or just message me to chat.",
+    "Systems online. Nextile AI at your service!"
 ]
 
 # 4. Database Functions
@@ -36,13 +36,22 @@ def get_all_chats():
 def save_chat(chat_id, messages):
     with shelve.open("nextile_storage") as db:
         chats = db.get("chats", {})
-        first_question = messages[1]["content"][:20] if len(messages) > 1 else "New chat"
+        # Create a title based on the first user message
+        first_text = "New chat"
+        for m in messages:
+            if m["role"] == "user":
+                first_text = m["content"][:20] + "..."
+                break
         chats[chat_id] = {
             "messages": messages,
-            "title": first_question,
+            "title": first_text,
             "date": datetime.now().strftime("%b %d")
         }
         db["chats"] = chats
+
+def delete_all_chats():
+    with shelve.open("nextile_storage") as db:
+        db["chats"] = {}
 
 # 5. Sidebar Navigation
 with st.sidebar:
@@ -56,10 +65,18 @@ with st.sidebar:
     st.subheader("Recent")
     all_chats = get_all_chats()
     for c_id, chat_data in reversed(list(all_chats.items())):
-        if st.button(f"{chat_data['title']}", key=c_id, use_container_width=True):
+        if st.button(f"💬 {chat_data['title']}", key=c_id, use_container_width=True):
             st.session_state.current_chat_id = c_id
             st.session_state.messages = chat_data["messages"]
             st.rerun()
+
+    # --- THE CLEAR HISTORY BUTTON ---
+    st.divider()
+    if st.button("🗑️ Clear history", use_container_width=True):
+        delete_all_chats()
+        st.session_state.current_chat_id = str(uuid.uuid4())
+        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
+        st.rerun()
 
 # 6. Initialize Current Session
 if "current_chat_id" not in st.session_state:
@@ -71,37 +88,31 @@ st.title("New chat")
 # 7. Display Messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        if isinstance(message["content"], bytes): # If it's a generated image
+        if isinstance(message["content"], bytes):
             st.image(message["content"])
         else:
             st.markdown(message["content"])
 
 # 8. Chat & Image Logic
-if prompt := st.chat_input("Message Nextile AI (use /draw for images)..."):
+if prompt := st.chat_input("Message Nextile AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         if prompt.lower().startswith("/draw"):
-            # --- IMAGE GENERATION MODE ---
             image_prompt = prompt.replace("/draw", "").strip()
-            st.write(f"🎨 Generating: '{image_prompt}'...")
+            st.write(f"🎨 Drawing '{image_prompt}'...")
             try:
-                # Generate image
                 image = image_client.text_to_image(image_prompt)
-                
-                # Convert PIL image to bytes for Streamlit
                 img_byte_arr = io.BytesIO()
                 image.save(img_byte_arr, format='PNG')
                 img_bytes = img_byte_arr.getvalue()
-                
                 st.image(img_bytes)
                 st.session_state.messages.append({"role": "assistant", "content": img_bytes})
-            except Exception as e:
-                st.error("Image generation failed. The model might be busy!")
+            except Exception:
+                st.error("I couldn't draw that. Maybe try a simpler prompt?")
         else:
-            # --- NORMAL CHAT MODE ---
             response_placeholder = st.empty()
             full_response = ""
             try:
