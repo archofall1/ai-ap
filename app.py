@@ -20,9 +20,9 @@ st.info("✨ **new image generation try /draw**")
 # 4. API & Model Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # Main Vision Model
-    vision_client = InferenceClient("meta-llama/Llama-3.2-11B-Vision-Instruct", token=api_key)
-    # Backup Text Model (Llama 3.2 3B)
+    # NEW VISION MODEL: Mistral Pixtral (Alternative to Llama)
+    vision_client = InferenceClient("mistralai/Pixtral-12B-2409", token=api_key)
+    # Backup Text Model
     text_client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
@@ -81,22 +81,18 @@ for message in st.session_state.messages:
             else:
                 st.markdown(content)
 
-# 9. Interactive Plus Button & Chat Bar
+# 9. Plus Button & Chat Bar
 col1, col2 = st.columns([1, 15])
 with col1:
     with st.popover("➕"):
-        st.write("Upload to Nextile AI")
         uploaded_file = st.file_uploader("Upload", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         if uploaded_file:
-            st.success("Attached!")
-            if st.button("🗑️ Remove Image"):
-                uploaded_file = None
-                st.rerun()
+            st.success("Image attached!")
 
 with col2:
     prompt = st.chat_input("Message Nextile AI...")
 
-# 10. Logic with Backup Switch
+# 10. Logic
 if prompt:
     user_content = []
     has_image = False
@@ -115,22 +111,20 @@ if prompt:
     with st.chat_message("assistant"):
         response_placeholder = st.empty()
         full_response = ""
-        system_prompt = {"role": "system", "content": "Your name is Nextile AI. Knight created you. You are kid-friendly and polite. Credit Knight if asked who made you."}
+        system_prompt = {"role": "system", "content": "Your name is Nextile AI. Knight created you. Be kid-friendly."}
         msgs = [system_prompt] + st.session_state.messages
         
         try:
-            # Try the Vision Model first
-            current_client = vision_client if has_image else text_client
-            for message in current_client.chat_completion(messages=msgs, max_tokens=800, stream=True):
+            # Using the new Vision model
+            for message in vision_client.chat_completion(messages=msgs, max_tokens=800, stream=True):
                 token = message.choices[0].delta.content
                 if token:
                     full_response += token
                     response_placeholder.markdown(full_response + "▌")
         except Exception:
-            # Automatic Switch to Backup if Vision is full
-            st.warning("Vision limit reached! Switching to Backup Brain...")
+            # If Vision fails, we tell the user clearly why it's text-only now
+            st.warning("⚠️ Vision limit reached. I am now in Text-Only mode and cannot see the image.")
             try:
-                # Use Text model for text-only response
                 text_msgs = [system_prompt] + [{"role": m["role"], "content": m["content"] if isinstance(m["content"], str) else m["content"][-1]["text"]} for m in st.session_state.messages]
                 for message in text_client.chat_completion(messages=text_msgs, max_tokens=800, stream=True):
                     token = message.choices[0].delta.content
@@ -138,7 +132,7 @@ if prompt:
                         full_response += token
                         response_placeholder.markdown(full_response + "▌")
             except:
-                st.error("All systems are currently busy. Please wait a moment!")
+                st.error("Nextile AI is sleeping. Try again in 30 minutes!")
         
         response_placeholder.markdown(full_response)
         st.session_state.messages.append({"role": "assistant", "content": full_response})
