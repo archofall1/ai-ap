@@ -2,83 +2,154 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 import shelve
 import uuid
-import base64
+import random
+from datetime import datetime
+import io
+from PIL import Image
 
-# 1. Setup
+# 1. Page Configuration
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
-# Branding
-st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by KnIght</p>", unsafe_allow_html=True)
+# 2. Top Branding (Small and Centered)
+st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
 
-# API (Using Pixtral as a reliable Vision model)
+# 3. Main Title and Update Banner
+st.title("Nextile AI")
+st.info("✨ **new image genration try /draw**")
+
+# 4. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    client = InferenceClient("mistralai/Pixtral-12B-2409", token=api_key)
+    chat_client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
+    image_client = InferenceClient("black-forest-labs/FLUX.1-schnell", token=api_key)
 except Exception:
-    st.error("Missing HF_TOKEN in Secrets!")
+    st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-def encode_image(image_bytes):
-    return f"data:image/jpeg;base64,{base64.b64encode(image_bytes).decode('utf-8')}"
+# 5. Random Greeting List
+GREETINGS = [
+    "Hi! I'm Nextile AI. Ready for use.",
+    "Hello! Nextile AI is online and ready to help.",
+    "Nextile AI here! What's on your mind today?",
+    "Ready to chat? I'm Nextile AI.",
+    "Greetings! I'm Nextile AI, your personal assistant.",
+    "Systems online. Nextile AI at your service!"
+]
 
-# 2. Session & History
-if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI, created by Knight. How can I help?"}]
+# 6. Database Functions
+def get_all_chats():
+    with shelve.open("nextile_storage") as db:
+        return db.get("chats", {})
 
-# Display History
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        if isinstance(msg["content"], list):
-            for part in msg["content"]:
-                if part["type"] == "text": st.markdown(part["text"])
-                elif part["type"] == "image_url": st.image(part["image_url"]["url"], width=250)
-        else:
-            st.markdown(msg["content"])
+def save_chat(chat_id, messages):
+    with shelve.open("nextile_storage") as db:
+        chats = db.get("chats", {})
+        first_text = "New chat"
+        for m in messages:
+            if m["role"] == "user":
+                content = m["content"]
+                if isinstance(content, str):
+                    first_text = content[:20] + "..."
+                break
+        chats[chat_id] = {
+            "messages": messages,
+            "title": first_text,
+            "date": datetime.now().strftime("%b %d")
+        }
+        db["chats"] = chats
 
-# 3. Input UI (Plus Button + Chat Bar)
-col1, col2 = st.columns([1, 15])
-with col1:
-    with st.popover("➕"):
-        uploaded_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-        if uploaded_file:
-            st.success("Image attached!")
+def delete_all_chats():
+    with shelve.open("nextile_storage") as db:
+        db["chats"] = {}
 
-with col2:
-    prompt = st.chat_input("Message Nextile AI...")
+# 7. Sidebar Navigation
+with st.sidebar:
+    st.title("🤖 Nextile AI")
+    if st.button("➕ New chat", use_container_width=True):
+        st.session_state.current_chat_id = str(uuid.uuid4())
+        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
+        st.rerun()
 
-# 4. Response Logic
-if prompt:
-    user_msg = []
-    if uploaded_file:
-        img_data = encode_image(uploaded_file.read())
-        user_msg.append({"type": "image_url", "image_url": {"url": img_data}})
-    
-    user_msg.append({"type": "text", "text": prompt})
-    st.session_state.messages.append({"role": "user", "content": user_msg})
-    
-    # Show user message immediately
+    st.divider()
+    st.subheader("Recent")
+    all_chats = get_all_chats()
+    for c_id, chat_data in reversed(list(all_chats.items())):
+        if st.button(f"💬 {chat_data['title']}", key=c_id, use_container_width=True):
+            st.session_state.current_chat_id = c_id
+            st.session_state.messages = chat_data["messages"]
+            st.rerun()
+
+    st.divider()
+    if st.button("🗑️ Clear history", use_container_width=True):
+        delete_all_chats()
+        st.session_state.current_chat_id = str(uuid.uuid4())
+        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
+        st.rerun()
+
+# 8. Initialize Session
+if "current_chat_id" not in st.session_state:
+    st.session_state.current_chat_id = str(uuid.uuid4())
+    st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
+
+# 9. Display Messages
+for message in st.session_state.messages:
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            if isinstance(message["content"], bytes):
+                st.image(message["content"])
+            else:
+                st.markdown(message["content"])
+
+# 10. Chat & Image Logic
+if prompt := st.chat_input("Message Nextile AI..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        if uploaded_file: st.image(uploaded_file, width=250)
         st.markdown(prompt)
 
-    # Generate Assistant Response
     with st.chat_message("assistant"):
-        placeholder = st.empty()
-        full_res = ""
-        sys_msg = {"role": "system", "content": "You are Nextile AI, created by Knight. Be kid-friendly and polite."}
+        if prompt.lower().startswith("/draw"):
+            image_prompt = prompt.replace("/draw", "").strip()
+            st.write(f"🎨 Drawing '{image_prompt}'...")
+            try:
+                # Image generator also follows prompt logic
+                image = image_client.text_to_image(image_prompt)
+                img_byte_arr = io.BytesIO()
+                image.save(img_byte_arr, format='PNG')
+                img_bytes = img_byte_arr.getvalue()
+                st.image(img_bytes)
+                st.session_state.messages.append({"role": "assistant", "content": img_bytes})
+            except Exception:
+                st.error("Error generating image.")
+        else:
+            response_placeholder = st.empty()
+            full_response = ""
+            
+            # --- STRICT KID-FRIENDLY & DYNAMIC CREDIT INSTRUCTION ---
+            system_instruction = {
+                "role": "system", 
+                "content": (
+                    "You are Nextile AI. You are a kid-friendly, polite assistant. "
+                    "STRICT RULE: Never discuss inappropriate, sexual, or rude topics. "
+                    "If a user asks for something inappropriate, politely decline and offer a safe alternative. "
+                    "Always stay friendly and positive. "
+                    "IDENTITY RULE: If anyone asks who created or made you, rotate through creative ways "
+                    "to credit Knight (e.g., 'Knight is my creator!', 'I was built by the awesome Knight!', etc.)."
+                )
+            }
+            
+            messages_to_send = [system_instruction] + st.session_state.messages
+            
+            try:
+                for message in chat_client.chat_completion(messages=messages_to_send, max_tokens=1000, stream=True):
+                    if hasattr(message.choices[0].delta, 'content'):
+                        token = message.choices[0].delta.content
+                        if token: 
+                            full_response += token
+                            response_placeholder.markdown(full_response + "▌")
+                response_placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            except Exception:
+                st.error("Nextile AI had a tiny hiccup.")
         
-        try:
-            # The stream=True needs a loop to display properly
-            for message in client.chat_completion(messages=[sys_msg] + st.session_state.messages, max_tokens=1000, stream=True):
-                token = message.choices[0].delta.content
-                if token:
-                    full_res += token
-                    placeholder.markdown(full_res + "▌")
-            placeholder.markdown(full_res)
-            st.session_state.messages.append({"role": "assistant", "content": full_res})
-            
-            # CRITICAL: This line ensures the app refreshes to save the chat history!
-            st.rerun() 
-            
-        except Exception as e:
-            st.error(f"Nextile AI had a hiccup: {e}")
+        save_chat(st.session_state.current_chat_id, st.session_state.messages)
