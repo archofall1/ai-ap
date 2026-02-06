@@ -11,11 +11,11 @@ st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
 st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@KnIght_Nextile' target='_blank'>Support the creator!</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official' target='_blank'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
-st.info("✨ **NEW IMAGE GENERATION UPDATE! TYR /draw FOLLOWED BY YOUR PROMPT TO GENERATE NEW IMAGES!**")
+st.info("✨ **new image genration try /draw**")
 
 # 4. Secret Key & Model Setup
 try:
@@ -127,6 +127,6 @@ if prompt:
             response_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
         except:
-            st.error("Nextile AI is having trouble seeing that image. Please refresh you rpage to try again")
+            st.error("Nextile AI is having trouble seeing that image.")
     
     save_chat(st.session_state.current_chat_id, st.session_state.messages)
