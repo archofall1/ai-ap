@@ -11,12 +11,12 @@ from PIL import Image
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
-st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support the creator!</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
-st.info("✨ **new image genration try /draw**")
+st.info("✨ **NEW IMAGE GENERATION UPDATE! TRY /draw TO GENERATE NEW IMAGES!**")
 
 # 4. Secret Key Setup
 try:
@@ -150,6 +150,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup.")
+                st.error("Nextile AI had a tiny hiccup. Please refresh your page to try again")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
