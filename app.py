@@ -11,8 +11,8 @@ from PIL import Image
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
-st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by KnIght</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@KnIght_Nextile'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px;margin-top: 0px;'><a href='https://www.youtube.com/@KnIght_Nextile'>Support me by Subscribing!</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
@@ -130,7 +130,7 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 "role": "system", 
                 "content": (
                     "You are Nextile AI. You are a kid-friendly, polite assistant. "
-                    "STRICT RULE: Never discuss inappropriate, sexual, or rude topics. "
+                    "STRICT RULE: Never discuss inappropriate, sexual, or rude topics.But you can talk about mild things like bullying or blood. "
                     "If a user asks for something inappropriate, politely decline and offer a safe alternative. "
                     "Always stay friendly and positive. "
                     "IDENTITY RULE: If anyone asks who created or made you, rotate through creative ways "
@@ -150,6 +150,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup.")
+                st.error("Nextile AI had a tiny hiccup.Refresh yourpage to try again")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
