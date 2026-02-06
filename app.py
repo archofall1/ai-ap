@@ -14,7 +14,7 @@ st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
-st.info("✨ **new image genration try /draw**")
+st.info("✨ **NEW IMAGE GENERATION UPDATE! TRY /draw FOLLOWED BY YOUR PROMPT TO GENERATE IMAGES.**")
 
 # 4. Secret Key Setup
 try:
