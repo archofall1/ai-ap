@@ -5,6 +5,7 @@ import uuid
 import random
 from datetime import datetime
 import io
+import re
 from PIL import Image
 
 # 1. Page Configuration
@@ -27,20 +28,28 @@ except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
 
-# --- NEW: SAFETY FILTER LIST ---
-# Add any words here that you want to block entirely
-BANNED_WORDS = ["nude", "naked", "sex", "gore", "blood", "violent", "kill", "drug", "weed", "cigarette"]
+# --- STRENGTHENED SAFETY FILTER ---
+BANNED_WORDS = [
+    "porn", "sex", "nude", "naked", "nsfw", "hentai", "xxx", "gore", 
+    "blood", "violent", "kill", "suicide", "drug", "weed", "cigar",
+    "bra", "underwear", "bikini", "lingerie", "stripped"
+]
 
 def is_safe(prompt):
-    """Checks if the image prompt contains any banned words."""
-    return not any(word in prompt.lower() for word in BANNED_WORDS)
+    # Clean the prompt: remove symbols that people use to hide words (e.g., p0rn, s.ex)
+    clean_prompt = re.sub(r'[^a-zA-Z\s]', '', prompt).lower()
+    
+    # Check for exact matches and partial matches
+    for word in BANNED_WORDS:
+        if word in clean_prompt:
+            return False
+    return True
 
 # 5. Greetings
 GREETINGS = [
     "Hi! I'm Nextile AI. I'm a safe, family-friendly assistant!",
     "Hello! Ready to chat or draw? Remember to keep prompts friendly!",
-    "Nextile AI online! Type /draw to create art, but keep it clean!",
-    "Greetings! I'm Nextile AI. I love making family-safe art for you."
+    "Nextile AI online! Type /draw to create art, but keep it clean!"
 ]
 
 # 6. Database Functions
@@ -72,20 +81,12 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    st.subheader("Recent")
     all_chats = get_all_chats()
     for c_id, chat_data in reversed(list(all_chats.items())):
         if st.button(f"💬 {chat_data['title']}", key=c_id, use_container_width=True):
             st.session_state.current_chat_id = c_id
             st.session_state.messages = chat_data["messages"]
             st.rerun()
-
-    st.divider()
-    if st.button("🗑️ Clear history", use_container_width=True):
-        delete_all_chats()
-        st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
-        st.rerun()
 
 # 8. Initialize Session
 if "current_chat_id" not in st.session_state:
@@ -111,10 +112,11 @@ if prompt := st.chat_input("Message Nextile AI..."):
         if prompt.lower().startswith("/draw"):
             image_prompt = prompt.replace("/draw", "").strip()
             
-            # --- APPLY SAFETY CHECK ---
+            # THE FILTER CHECK
             if not is_safe(image_prompt):
-                st.warning("⚠️ Nextile AI is unable to generate that image because it does not meet our family-friendly safety guidelines.")
-                st.session_state.messages.append({"role": "assistant", "content": "I'm sorry, I can't draw that. I only create family-friendly images!"})
+                warning_text = "⚠️ Nextile AI is unable to generate that image because it is inappropriate and does not meet our family-friendly safety guidelines."
+                st.warning(warning_text)
+                st.session_state.messages.append({"role": "assistant", "content": warning_text})
             else:
                 st.write(f"🎨 Drawing '{image_prompt}'...")
                 try:
@@ -127,19 +129,13 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 except Exception:
                     st.error("Error generating image.")
         else:
+            # Regular Chat Logic
             response_placeholder = st.empty()
             full_response = ""
-            
             system_instruction = {
                 "role": "system", 
-                "content": (
-                    "You are Nextile AI, a kid-friendly assistant built by Knight. "
-                    "You can generate images using /draw. "
-                    "If a user asks for inappropriate images, explain that you only do family-friendly art. "
-                    "Never discuss rude or unsafe topics. Always be helpful and credit Knight as your creator."
-                )
+                "content": "You are Nextile AI, a kid-friendly assistant built by Knight. Refuse all inappropriate requests politely."
             }
-            
             messages_to_send = [system_instruction] + st.session_state.messages
             
             try:
