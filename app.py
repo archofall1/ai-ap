@@ -81,12 +81,25 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
+    
+    st.subheader("Recent Chats")
     all_chats = get_all_chats()
     for c_id, chat_data in reversed(list(all_chats.items())):
         if st.button(f"💬 {chat_data['title']}", key=c_id, use_container_width=True):
             st.session_state.current_chat_id = c_id
             st.session_state.messages = chat_data["messages"]
             st.rerun()
+
+    st.divider()
+    
+    # --- CLEAR HISTORY BUTTON ---
+    if st.button("🗑️ Clear All History", use_container_width=True):
+        delete_all_chats()
+        # Reset current session
+        st.session_state.current_chat_id = str(uuid.uuid4())
+        st.session_state.messages = [{"role": "assistant", "content": random.choice(GREETINGS)}]
+        st.success("History Deleted!")
+        st.rerun()
 
 # 8. Initialize Session
 if "current_chat_id" not in st.session_state:
