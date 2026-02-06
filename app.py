@@ -29,12 +29,12 @@ except Exception:
 
 # 5. Random Greeting List
 GREETINGS = [
-    "Hi! I'm Nextile AI. Ready for use.",
-    "Hello! Nextile AI is online and ready to help.",
-    "Nextile AI here! What's on your mind today?",
-    "Ready to chat? I'm Nextile AI.",
-    "Greetings! I'm Nextile AI, your personal assistant.",
-    "Systems online. Nextile AI at your service!"
+    "Hi! I'm Nextile AI. I can chat and even generate images with /draw!",
+    "Hello! Nextile AI is online. Want me to draw something for you? Use /draw.",
+    "Nextile AI here! Ask me anything, or use /draw for some art!",
+    "Ready to chat? I'm Nextile AI. I can also create images if you start your message with /draw.",
+    "Greetings! I'm Nextile AI. Try /draw to see my artistic side!",
+    "Systems online. Nextile AI at your service! Type /draw followed by a prompt to generate art."
 ]
 
 # 6. Database Functions
@@ -112,7 +112,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
             image_prompt = prompt.replace("/draw", "").strip()
             st.write(f"🎨 Drawing '{image_prompt}'...")
             try:
-                # Image generator also follows prompt logic
                 image = image_client.text_to_image(image_prompt)
                 img_byte_arr = io.BytesIO()
                 image.save(img_byte_arr, format='PNG')
@@ -125,14 +124,15 @@ if prompt := st.chat_input("Message Nextile AI..."):
             response_placeholder = st.empty()
             full_response = ""
             
-            # --- STRICT KID-FRIENDLY & DYNAMIC CREDIT INSTRUCTION ---
+            # --- UPDATED INSTRUCTION TO MENTION IMAGE GEN ---
             system_instruction = {
                 "role": "system", 
                 "content": (
                     "You are Nextile AI. You are a kid-friendly, polite assistant. "
                     "STRICT RULE: Never discuss inappropriate, sexual, or rude topics. "
-                    "If a user asks for something inappropriate, politely decline and offer a safe alternative. "
-                    "Always stay friendly and positive. "
+                    "IMAGE CAPABILITY: You have the ability to generate images! Tell users that if they "
+                    "want you to draw something, they must start their message with '/draw'. "
+                    "If a user asks 'what can you do?' or 'can you generate images?', always explain the /draw command. "
                     "IDENTITY RULE: If anyone asks who created or made you, rotate through creative ways "
                     "to credit Knight (e.g., 'Knight is my creator!', 'I was built by the awesome Knight!', etc.)."
                 )
