@@ -10,18 +10,20 @@ import base64
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding
-st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official' target='_blank'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by KnIght</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@KnIght_Nextile' target='_blank'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
 
-# 3. Main Title
+# 3. Title
 st.title("Nextile AI")
-st.info("✨ **new image genration try /draw**")
+st.info("✨ **new image generation try /draw**")
 
-# 4. Secret Key & Vision Model Setup
+# 4. API & Model Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # We use the 11B Vision model so the AI can actually see your uploads
-    client = InferenceClient("meta-llama/Llama-3.2-11B-Vision-Instruct", token=api_key)
+    # Main Vision Model
+    vision_client = InferenceClient("meta-llama/Llama-3.2-11B-Vision-Instruct", token=api_key)
+    # Backup Text Model (Llama 3.2 3B)
+    text_client = InferenceClient("meta-llama/Llama-3.2-3B-Instruct", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
     st.stop()
@@ -29,7 +31,7 @@ except Exception:
 def encode_image(image_bytes):
     return f"data:image/jpeg;base64,{base64.b64encode(image_bytes).decode('utf-8')}"
 
-# 5. Database Functions
+# 5. Database Logic
 def get_all_chats():
     with shelve.open("nextile_storage") as db:
         return db.get("chats", {})
@@ -75,59 +77,70 @@ for message in st.session_state.messages:
             if isinstance(content, list):
                 for part in content:
                     if part["type"] == "text": st.markdown(part["text"])
-                    elif part["type"] == "image_url": st.image(part["image_url"]["url"], width=300)
+                    elif part["type"] == "image_url": st.image(part["image_url"]["url"], width=250)
             else:
                 st.markdown(content)
 
-# 9. THE INTERACTIVE PLUS BUTTON (CLEAN POPOVER)
+# 9. Interactive Plus Button & Chat Bar
 col1, col2 = st.columns([1, 15])
 with col1:
     with st.popover("➕"):
-        st.write("Upload an Image")
-        # The label is hidden to keep it looking like a clean menu
+        st.write("Upload to Nextile AI")
         uploaded_file = st.file_uploader("Upload", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         if uploaded_file:
-            st.success("Image Ready!")
+            st.success("Attached!")
+            if st.button("🗑️ Remove Image"):
+                uploaded_file = None
+                st.rerun()
 
 with col2:
     prompt = st.chat_input("Message Nextile AI...")
 
-# 10. Logic to Combine Image + Text
+# 10. Logic with Backup Switch
 if prompt:
     user_content = []
-    
-    # Check if an image was uploaded in the popover
+    has_image = False
     if uploaded_file:
         img_bytes = uploaded_file.read()
-        encoded = encode_image(img_bytes)
-        user_content.append({"type": "image_url", "image_url": {"url": encoded}})
+        user_content.append({"type": "image_url", "image_url": {"url": encode_image(img_bytes)}})
+        has_image = True
     
     user_content.append({"type": "text", "text": prompt})
-    
-    # Add to history and display
     st.session_state.messages.append({"role": "user", "content": user_content})
+    
     with st.chat_message("user"):
-        if uploaded_file: st.image(uploaded_file, width=300)
+        if uploaded_file: st.image(uploaded_file, width=250)
         st.markdown(prompt)
 
-    # Generate Response
     with st.chat_message("assistant"):
         response_placeholder = st.empty()
         full_response = ""
-        
-        system_prompt = {"role": "system", "content": "Your name is Nextile AI. Knight created you. Be kid-friendly."}
+        system_prompt = {"role": "system", "content": "Your name is Nextile AI. Knight created you. You are kid-friendly and polite. Credit Knight if asked who made you."}
         msgs = [system_prompt] + st.session_state.messages
         
         try:
-            # The stream=True makes it type out word by word
-            for message in client.chat_completion(messages=msgs, max_tokens=1000, stream=True):
+            # Try the Vision Model first
+            current_client = vision_client if has_image else text_client
+            for message in current_client.chat_completion(messages=msgs, max_tokens=800, stream=True):
                 token = message.choices[0].delta.content
                 if token:
                     full_response += token
                     response_placeholder.markdown(full_response + "▌")
-            response_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-        except:
-            st.error("Nextile AI had a problem. Check your internet or API limit.")
+        except Exception:
+            # Automatic Switch to Backup if Vision is full
+            st.warning("Vision limit reached! Switching to Backup Brain...")
+            try:
+                # Use Text model for text-only response
+                text_msgs = [system_prompt] + [{"role": m["role"], "content": m["content"] if isinstance(m["content"], str) else m["content"][-1]["text"]} for m in st.session_state.messages]
+                for message in text_client.chat_completion(messages=text_msgs, max_tokens=800, stream=True):
+                    token = message.choices[0].delta.content
+                    if token:
+                        full_response += token
+                        response_placeholder.markdown(full_response + "▌")
+            except:
+                st.error("All systems are currently busy. Please wait a moment!")
+        
+        response_placeholder.markdown(full_response)
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     save_chat(st.session_state.current_chat_id, st.session_state.messages)
