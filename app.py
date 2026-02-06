@@ -8,12 +8,16 @@ import io
 from PIL import Image
 import base64
 
-# 1. Page Configuration
-st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
+# 1. Page Configuration - Sets the Robot Icon in browser tabs
+st.set_page_config(
+    page_title="Nextile AI (Gemini 3)", 
+    page_icon="🤖", 
+    layout="wide"
+)
 
-# 2. Top Branding (Small and Centered)
+# 2. Top Branding
 st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support the creator bu SUBSCRIBING!</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official' target='_blank'>Support the creator by Subscribing!</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
@@ -22,9 +26,8 @@ st.info("✨ **new image genration try /draw**")
 # 4. Secret Key Setup
 try:
     api_key = st.secrets["HF_TOKEN"]
-    # VISION BRAIN (Can see and talk)
+    # VISION BRAIN (Llama 3.2 11B Vision)
     chat_client = InferenceClient("meta-llama/Llama-3.2-11B-Vision-Instruct", token=api_key)
-    # ART BRAIN
     image_client = InferenceClient("black-forest-labs/FLUX.1-schnell", token=api_key)
 except Exception:
     st.error("Missing API Key! Please add HF_TOKEN to your Streamlit Secrets.")
@@ -53,11 +56,7 @@ def save_chat(chat_id, messages):
                 elif isinstance(m["content"], str):
                     first_text = m["content"][:20] + "..."
                 break
-        chats[chat_id] = {
-            "messages": messages,
-            "title": first_text,
-            "date": datetime.now().strftime("%b %d")
-        }
+        chats[chat_id] = {"messages": messages, "title": first_text, "date": datetime.now().strftime("%b %d")}
         db["chats"] = chats
 
 def delete_all_chats():
@@ -69,7 +68,7 @@ with st.sidebar:
     st.title("🤖 Nextile AI")
     if st.button("➕ New chat", use_container_width=True):
         st.session_state.current_chat_id = str(uuid.uuid4())
-        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI, created by Knight."}]
+        st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Gemini 3, created by Knight."}]
         st.rerun()
 
     st.divider()
@@ -91,7 +90,7 @@ with st.sidebar:
 # 8. Initialize Session
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = str(uuid.uuid4())
-    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Nextile AI, created by Knight."}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi! I'm Gemini 3, created by Knight."}]
 
 # 9. Display Messages
 for message in st.session_state.messages:
@@ -106,16 +105,16 @@ for message in st.session_state.messages:
             else:
                 st.markdown(message["content"])
 
-# 10. The Bottom Layout (Plus Icon + Text Bar)
-# We use columns to put the uploader and the chat input on the same line
-input_col, upload_col = st.columns([9, 1])
+# 10. INTERACTIVE BUTTON BAR
+# We use a column layout to put the functional file uploader next to the input
+col1, col2 = st.columns([0.15, 0.85])
 
-with upload_col:
-    # This acts as your "Plus" button for uploads
-    uploaded_file = st.file_uploader("➕", type=["jpg", "jpeg", "png"], label_visibility="visible")
+with col1:
+    # This is the actual interactive "Plus Button"
+    uploaded_file = st.file_uploader("➕", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
-with input_col:
-    prompt = st.chat_input("Message Nextile AI...")
+with col2:
+    prompt = st.chat_input("Ask Gemini 3...")
 
 # 11. Chat & Vision Logic
 if prompt:
@@ -148,10 +147,10 @@ if prompt:
             response_placeholder = st.empty()
             full_response = ""
             
-            # Kid-friendly and Dynamic Credit instruction
+            # System Instruction for Safety, Kid-Friendliness, and Credit
             system_instruction = {
                 "role": "system", 
-                "content": "You are Nextile AI. Knight is your creator. Be kid-friendly, never rude, and never mention inappropriate topics. Credit Knight in fun ways if asked who made you."
+                "content": "Your name is Gemini 3. You were created by Knight. Be helpful, kid-friendly, and never rude. Credit Knight creatively if asked who made you."
             }
             
             msgs_to_send = [system_instruction] + st.session_state.messages
@@ -165,6 +164,6 @@ if prompt:
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except:
-                st.error("Nextile AI is having trouble processing that. Please refresh your page to try again.")
+                st.error("Nextile AI (Gemini 3) is having trouble processing that.")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
