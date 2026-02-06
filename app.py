@@ -11,12 +11,12 @@ from PIL import Image
 st.set_page_config(page_title="Nextile AI", page_icon="🤖", layout="wide")
 
 # 2. Top Branding (Small and Centered)
-st.markdown("<p style='text-align: center; font-size: 20px; margin-bottom: 0px;'>Made by Knight</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 20px; margin-top: 0px;'><a href='https://www.youtube.com/@knxght.official'>Support the creator by SUBSCRIBING!✨</a></p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 14px; margin-bottom: 0px;'>Made by KnIght</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top: 0px;'><a href='https://www.youtube.com/@KnIght_Nextile'>Visit my YouTube Channel</a></p>", unsafe_allow_html=True)
 
 # 3. Main Title and Update Banner
 st.title("Nextile AI")
-st.info("✨ **New image generation update! Try /draw followed by your promt to generate an image!**")
+st.info("✨ **new image genration try /draw**")
 
 # 4. Secret Key Setup
 try:
@@ -112,6 +112,7 @@ if prompt := st.chat_input("Message Nextile AI..."):
             image_prompt = prompt.replace("/draw", "").strip()
             st.write(f"🎨 Drawing '{image_prompt}'...")
             try:
+                # Image generator also follows prompt logic
                 image = image_client.text_to_image(image_prompt)
                 img_byte_arr = io.BytesIO()
                 image.save(img_byte_arr, format='PNG')
@@ -124,16 +125,16 @@ if prompt := st.chat_input("Message Nextile AI..."):
             response_placeholder = st.empty()
             full_response = ""
             
-            # --- THE DYNAMIC SYSTEM INSTRUCTION ---
+            # --- STRICT KID-FRIENDLY & DYNAMIC CREDIT INSTRUCTION ---
             system_instruction = {
                 "role": "system", 
                 "content": (
-                    "You are Nextile AI. You have a distinct identity. "
-                    "If anyone asks who created you, who made you, or who your developer is, "
-                    "rotate through creative ways to credit Knight. For example: "
-                    "'I was brought to life by Knight.', 'My code was forged by Knight.', "
-                    "'I owe my existence to Knight.', or 'Knight is the genius who created me.' "
-                    "Always stay helpful and polite."
+                    "You are Nextile AI. You are a kid-friendly, polite assistant. "
+                    "STRICT RULE: Never discuss inappropriate, sexual, or rude topics. "
+                    "If a user asks for something inappropriate, politely decline and offer a safe alternative. "
+                    "Always stay friendly and positive. "
+                    "IDENTITY RULE: If anyone asks who created or made you, rotate through creative ways "
+                    "to credit Knight (e.g., 'Knight is my creator!', 'I was built by the awesome Knight!', etc.)."
                 )
             }
             
@@ -149,6 +150,6 @@ if prompt := st.chat_input("Message Nextile AI..."):
                 response_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
-                st.error("Nextile AI had a tiny hiccup.Please refresh your page to try again")
+                st.error("Nextile AI had a tiny hiccup.")
         
         save_chat(st.session_state.current_chat_id, st.session_state.messages)
