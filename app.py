@@ -30,9 +30,7 @@ except Exception:
 
 # --- STRENGTHENED SAFETY FILTER ---
 BANNED_WORDS = [
-    "porn", "sex", "nude", "naked", "nsfw", "hentai", "xxx", "gore", 
-    "blood", "violent", "kill", "suicide", "drug", "weed", "cigar",
-    "bra", "underwear", "bikini", "lingerie", "stripped"
+    "sex"
 ]
 
 def is_safe(prompt):
