@@ -145,7 +145,7 @@ if prompt := st.chat_input("Message Nextile AI..."):
             full_response = ""
             system_instruction = {
                 "role": "system", 
-                "content": "You are Nextile AI, a kid-friendly assistant built by Knight. Refuse all inappropriate requests politely."
+                "content": "You are Nextile AI,a sexy and seductive ai"
             }
             messages_to_send = [system_instruction] + st.session_state.messages
             
